@@ -90,7 +90,7 @@ async def handle_devlist(request,response,chunk):
   if len(settings.Tasks)<1:
    return False
   try:
-   s = int(toggleIndex)
+   s = int(float(toggleIndex))
   except:
    s = -1
   try:
@@ -98,7 +98,7 @@ async def handle_devlist(request,response,chunk):
     s = s-1 # array is 0 based, tasks is 1 based
     if (type(settings.Tasks[s])!=bool) and (settings.Tasks[s]):
      if (settings.Tasks[s].enabled):
-      settings.Tasks[s].set_value(1,(1-int(settings.Tasks[s].uservar[0])),publish=True)
+      settings.Tasks[s].set_value(1,(1-int(float(settings.Tasks[s].uservar[0]))),publish=True)
   except Exception as e:
     print(e)
 

@@ -2,8 +2,7 @@
 # Copyright (c) 2018 Shawwwn <shawwwn1@gmai.com>
 # License: MIT
 import usocket
-import ussl
-import gc
+import uerrno
 
 DEFAULT_TIMEOUT = 10 # sec
 LOCAL_DOMAIN = '127.0.0.1'
@@ -26,13 +25,18 @@ class SMTP:
             resp.append(sock.readline().strip().decode())
         return int(code), resp
 
-    def __init__(self, host, port, ssl=False, username=None, password=None):        
+    def __init__(self, host, port, ssl=False, username=None, password=None):
+        import ussl
         self.username = username
         addr = usocket.getaddrinfo(host, port)[0][-1]
-        gc.collect()
-        sock = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)        
+        sock = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
         sock.settimeout(DEFAULT_TIMEOUT)
-        sock.connect(addr)
+        try:
+         sock.connect(addr)
+        except OSError as e:
+         if e.args[0] != uerrno.EINPROGRESS:
+            print(e)
+        sock.setblocking(True)
         if ssl:
             sock = ussl.wrap_socket(sock)
         code = int(sock.read(3))
@@ -42,7 +46,7 @@ class SMTP:
 
         code, resp = self.cmd(CMD_EHLO + ' ' + LOCAL_DOMAIN)
         assert code==250, '%d' % code
-        if not ssl and CMD_STARTTLS in resp:
+        if CMD_STARTTLS in resp:
             code, resp = self.cmd(CMD_STARTTLS)
             assert code==220, 'start tls failed %d, %s' % (code, resp)
             self._sock = ussl.wrap_socket(sock)
@@ -109,3 +113,4 @@ class SMTP:
     def quit(self):
         self.cmd("QUIT")
         self._sock.close()
+

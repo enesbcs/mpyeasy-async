@@ -1,7 +1,7 @@
 try:
  from machine import Pin, I2C, SPI, UART, freq, reset, unique_id
 except:
- pass
+ from inc.machine import Pin, I2C, SPI, UART, freq, reset, unique_id
 import settings
 import gc
 
@@ -166,9 +166,10 @@ def initgpio():
 
 def setgpio(pnum):
  pino = None
- for p in settings.Pinout:
-  try:
-   if pnum == p['p']:
+ try:
+  for p in settings.Pinout:
+   try:
+    if pnum == p['p']:
      if p['m'] == 1: #input
       pino = Pin(pnum, Pin.IN)
      elif p['m'] == 2: #input pulldown
@@ -181,8 +182,10 @@ def setgpio(pnum):
       pino = Pin(pnum, Pin.OUT, value=0)
      elif p['m'] == 6: #output hi
       pino = Pin(pnum, Pin.OUT, value=1)
-  except Exception as e:
+   except Exception as e:
      print("Set D",pnum,str(e))
+ except:
+  pass
  return pino
 
 def geti2clist():

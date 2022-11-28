@@ -1,5 +1,8 @@
 import pglobals
-import ujson
+try:
+ import ujson
+except:
+ import json as ujson
 import gc
 
 settingsfile    = 'data/settings.dat'

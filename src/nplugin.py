@@ -1,4 +1,7 @@
-import ujson
+try:
+ import ujson
+except:
+ import json as ujson
 
 class NPluginProto: # Skeleton for every notification plugin! Override necessary functions and extend as neeeded!
  NPLUGIN_ID = -1

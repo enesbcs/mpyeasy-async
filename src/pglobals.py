@@ -1,5 +1,5 @@
-PROGNAME = "mPyEasy"
-BUILD   = 11206
+PROGNAME = "mPyEasy-async"
+BUILD   = 11332
 PROGVER = str(BUILD)[:1]+"."+str(BUILD)[1:2]+"."+str(BUILD)[2:]
 
 gpMenu = []
@@ -36,10 +36,10 @@ LOG_LEVEL_DEBUG                  =   3
 LOG_LEVEL_DEBUG_MORE             =   4
 LOG_LEVEL_DEBUG_DEV              =   9
 
-LOG_MAXLINES                     = 120
+LOG_MAXLINES                     = 50
 
-DEVICES_MAX                      = 60
-TASKS_MAX                        = 32
+DEVICES_MAX                      = 30
+TASKS_MAX                        = 8
 
 CONTROLLER_MAX                   =  3
 NOTIFICATION_MAX                 =  2
@@ -55,7 +55,7 @@ UNIT_MAX                         = 128
 RULES_TIMER_MAX                  =   4
 SYSTEM_TIMER_MAX                 =   0
 SYSTEM_CMD_TIMER_MAX             =   0
-RULES_MAX_SIZE                   = 8192
+RULES_MAX_SIZE                   = 4096
 RULES_MAX_NESTING_LEVEL          =   4
 RULESETS_MAX                     =   4
 RULES_BUFFER_SIZE                =  64

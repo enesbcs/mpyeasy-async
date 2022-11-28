@@ -11,10 +11,10 @@
 #
 import plugin
 import pglobals
-import inc.misc as misc
+import misc
 import webserver_global as ws
-from commands import parseruleline
-import inc.utime as utime
+import commands
+import utime
 import inc.libhw as libhw
 try:
  from inc.st7735 import ST7735
@@ -353,7 +353,7 @@ class Plugin(plugin.PluginProto):
   return res
 
  def tftparse(self,ostr):
-      cl, st = parseruleline(ostr)
+      cl, st = commands.parseruleline(ostr)
       if st=="CMD":
           resstr=str(cl)
       else:
@@ -401,3 +401,7 @@ class Plugin(plugin.PluginProto):
 
  def show(self):
      self._device.show()
+
+ def power(self,status=None):
+     res = False
+     return res

@@ -1,4 +1,7 @@
-import usocket
+try:
+ import usocket
+except:
+ import socket as usocket
 import gc
 
 class Response:

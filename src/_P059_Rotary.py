@@ -1,5 +1,5 @@
 #############################################################################
-#################### Rotary encoder plugin for mPyEasy ######################
+################ Rotary encoder plugin for mPyEasy-async ####################
 #############################################################################
 #
 # Copyright (C) 2022 by Alexander Nagy - https://bitekmindenhol.blog.hu/
@@ -29,18 +29,16 @@ class Plugin(plugin.PluginProto):
   self.timeroptional = True
   self.inverselogicoption = False
   self.recdataoption = False
+  self.dtlast = -1
   self.clklast = -1
   self.timer100ms = False
   self._pin1 = None
   self._pin2 = None
   self.inprogress = False
+  self.lastsend = 0
 
  def plugin_exit(self):
-  if self.enabled and self.timer100ms==False:
-   try:
-    self._pin1.irq(handler=None)
-   except:
-    pass
+  self.timer100ms = False
   return True
 
  def plugin_init(self,enableplugin=None):
@@ -58,13 +56,12 @@ class Plugin(plugin.PluginProto):
    import inc.libhw as libhw
    try:
     self._pin1 = libhw.setgpio(int(self.taskdevicepin[0]))
-    self._pin1.irq(handler=None)
     self._pin2 = libhw.setgpio(int(self.taskdevicepin[1]))
    except:
     pass
    try:
     self.clklast = self._pin1.value()
-    self._pin1.irq(trigger=2,handler=self.p059_handler)
+    self.timer100ms = True
     self.initialized = True
    except:
     misc.addLog(pglobals.LOG_LEVEL_ERROR,"Event can not be added")
@@ -126,27 +123,36 @@ class Plugin(plugin.PluginProto):
    self.plugin_init()
   return True
 
+ def timer_ten_per_second(self):
+  if self.initialized and self.enabled:
+    self.p059_handler(0)
+
  def p059_handler(self,channel):
-  if self.initialized and self.enabled and (self.inprogress==False):
+  if (self.inprogress==False):
    try:
     self.inprogress = True
     aclk = self._pin1.value()
     if aclk != self.clklast:
-     dtstate = self._pin2.value()
+     self.dtlast = self._pin2.value()
      try:
       ac = float(self.uservar[0])
      except:
       ac = 0
-     if dtstate !=  aclk:
+     if self.dtlast !=  aclk:
       if ac<float(self.taskdevicepluginconfig[2]):
        ac += float(self.taskdevicepluginconfig[0])
      else:
       if ac>float(self.taskdevicepluginconfig[1]):
        ac -= float(self.taskdevicepluginconfig[0])
      self.clklast = aclk
-     self.set_value(1,ac,True)
-     self._lastdataservetime = utime.ticks_ms()
+     atime = utime.ticks_ms()
+     if atime - self.lastsend > 200:
+      rep = True
+      self.lastsend = atime
+     else:
+      rep = False
+     self.set_value(1,ac,rep)
+     self._lastdataservetime = atime
     self.inprogress = False
    except Exception as e:
-#    print(e)
     self.inprogress = False

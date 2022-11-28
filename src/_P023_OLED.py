@@ -13,7 +13,7 @@ import plugin
 import pglobals
 import inc.misc as misc
 import webserver_global as ws
-from commands import parseruleline
+import commands
 import inc.utime as utime
 import inc.libhw as libhw
 try:
@@ -21,6 +21,7 @@ try:
 except:
  pass
 from inc.writer.writer import Writer
+import settings
 
 class Plugin(plugin.PluginProto):
  PLUGIN_ID = 23
@@ -48,6 +49,11 @@ class Plugin(plugin.PluginProto):
   self.textlines = 0
   self.graphmode = False
   self.rgb = False
+  self.powerstate = -1
+  self.trigtask = ""
+  self.trigtime = 0
+  self._trigger = None
+  self.lastactive = 0
 
  def plugin_init(self,enableplugin=None):
   plugin.PluginProto.plugin_init(self,enableplugin)
@@ -133,7 +139,19 @@ class Plugin(plugin.PluginProto):
      err += str(e)
     if self._device is not None and self._dispimage is not None:
      self.initialized = True
+     self.powerstate = 1
      misc.addLog(pglobals.LOG_LEVEL_INFO,"OLED initialized!")
+     try:
+      dstr = str(self.trigtask).strip()
+      didx = dstr.split("_")
+      self._trigger = settings.Tasks[int(didx[0])]
+     except Exception as e:
+      self._trigger = None
+     if self.trigtime == 0:
+        self._trigger = None
+     if self._trigger is not None:
+      self.lastactive = utime.time()
+      self._trigger._writecallback = self.triggerhandle
     else:
      misc.addLog(pglobals.LOG_LEVEL_ERROR,"OLED can not be initialized! "+str(err))
   else:
@@ -177,6 +195,26 @@ class Plugin(plugin.PluginProto):
    except:
     linestr = ""
    ws.addFormTextBox("Line"+str(l+1),"p023_template"+str(l),linestr,128)
+  options1 = ["None"]
+  optionvalues1 = ["_"]
+  try:
+    for t in range(0,len(settings.Tasks)):
+     try:
+      if (settings.Tasks[t]):
+       options1.append("T"+str(t+1)+" / "+str(settings.Tasks[t].taskname))
+       optionvalues1.append(str(t))
+     except:
+      pass
+  except Exception as e:
+    print(e)
+  ws.addHtml("<tr><td>Stay on trigger task:<td>")
+  ws.addSelector_Head("p023_trig",False)
+  for o in range(len(options1)):
+       ws.addSelector_Item(options1[o],optionvalues1[o],(str(optionvalues1[o])==str(self.trigtask)),False)
+  ws.addSelector_Foot()
+  options1 = ["None","2 min","5 min","10 min","15 min","30 min"]
+  optionvalues1 = [0,2,5,10,15,30]
+  ws.addFormSelector("Trigger wake on time","p023_trigtime",len(options1),options1,optionvalues1,None,int(self.trigtime))
 
   return True
 
@@ -230,11 +268,28 @@ class Plugin(plugin.PluginProto):
       self.lines[l]=linestr
     except:
       self.lines.append(linestr)
+
+   par = ws.arg("p023_trig",params)
+   self.trigtask = str(par)      
+   par = ws.arg("p023_trigtime",params)
+   if par == "":
+    par = 0
+   self.trigtime = int(par)
+   
    self.plugin_init()
    return True
 
- def plugin_read(self): # deal with data processing at specified time interval
+ def plugin_read(self): # deal with data processing at specified time interval  
   if self.initialized and self.enabled:
+    if self._trigger is not None:
+        try:
+         if self.powerstate==1:
+          if self.lastactive+(self.trigtime*60)<utime.time():
+             self._device.poweroff()
+             self.powerstate=0
+        except:
+          pass           
+    if self.powerstate==1:
      try:
       if self.taskdevicepluginconfig[6] == False:
        self._device.fill(0)
@@ -252,11 +307,18 @@ class Plugin(plugin.PluginProto):
           self._device.fill_rect( 0,y+2, self._device.width, y+self.lineheight, 0)
          self._dispimage.set_textpos(self._device,y,0)
          self._dispimage._printline(resstr,False)
+      if self.powerstate==1:
        self._device.show()
      except Exception as e:
       misc.addLog(pglobals.LOG_LEVEL_ERROR,"OLED write error! "+str(e))
-     self._lastdataservetime = utime.ticks_ms()
+    self._lastdataservetime = utime.ticks_ms()
   return True
+
+ def triggerhandle(self,taskindex,valuenum):
+     self.lastactive = utime.time()
+     if self.powerstate<1:
+        self._device.poweron()
+        self.powerstate=1
 
  def plugin_write(self,cmd):
   res = False
@@ -271,9 +333,11 @@ class Plugin(plugin.PluginProto):
     if self._device is not None:
      if cmd == "on":
       self._device.poweron()
+      self.powerstate=1
       res = True
      elif cmd == "off":
       self._device.poweroff()
+      self.powerstate=0
       res = True
      elif cmd == "clear":
       self._device.fill(0)
@@ -331,7 +395,7 @@ class Plugin(plugin.PluginProto):
   return res
 
  def oledparse(self,ostr):
-      cl, st = parseruleline(ostr)
+      cl, st = commands.parseruleline(ostr)
       if st=="CMD":
           resstr=str(cl)
       else:
@@ -379,3 +443,18 @@ class Plugin(plugin.PluginProto):
 
  def show(self):
      self._device.show()
+
+ def power(self,status=None):
+     res = False
+     if status is not None:
+      if status == 1:
+       self._device.poweron()
+       self.powerstate=1
+       res = True
+      else:
+       self._device.poweroff()
+       self.powerstate=0
+       res = True
+     else:
+      return self.powerstate
+     return res

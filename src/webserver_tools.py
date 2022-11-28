@@ -1,6 +1,5 @@
 import webserver_global as ws
 from web import awrite, parse_qs
-from commands import CommandQueue
 import settings
 
 async def handle_tools(request,response,chunk):
@@ -28,9 +27,9 @@ async def handle_tools(request,response,chunk):
  try:
   if len(webrequest)>0:
    import commands
-   CommandQueue.append(webrequest) #   responsestr = str(commands.doExecuteCommand(webrequest))
- except:
-  pass
+   commands.CommandQueue.append(webrequest) #   responsestr = str(commands.doExecuteCommand(webrequest))
+ except Exception as e:
+  print(e)
  if len(webrequest)>0:
   try:
    import inc.misc as misc

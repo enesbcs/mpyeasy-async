@@ -3,7 +3,10 @@ import pglobals
 import inc.misc as misc
 import webserver_global as ws
 from commands import parseruleline
-import urequests
+try:
+ import urequests
+except:
+ import requests as urequests
 try:
  import ujson
 except:
@@ -52,6 +55,7 @@ class Plugin(nplugin.NPluginProto):
   ws.addFormTextBox("Server","server",self.server,128)
   ws.addFormNumericBox("Port","port",self.port,1,65535)
   ws.addFormPasswordBox("Token","passw",self.passw,64)
+  ws.addFormTextBox("Chat-id","chatid",self.chatid,255)
   ws.addHtml("<TR><TD>Body:<TD><textarea name='body' rows='5' cols='80' size=255 wrap='off'>")
   ws.addHtml(str(self.body))
   ws.addHtml("</textarea>")
@@ -72,6 +76,7 @@ class Plugin(nplugin.NPluginProto):
   if "**" not in passw:
    self.passw  = passw
    self.chatid = ""
+  self.chatid  = str(ws.arg("chatid",params))
   self.body    = ws.arg("body",params)
   self.plugin_init()
   return True

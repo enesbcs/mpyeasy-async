@@ -1,6 +1,9 @@
 import pglobals
 from commands import isformula, parseformula, rulesProcessing
-import ujson
+try:
+ import ujson
+except:
+ import json as ujson
 import inc.misc as misc
 import inc.utime as utime
 

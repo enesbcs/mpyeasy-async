@@ -23,9 +23,14 @@ timer2s = 0
 timer30s = 0
 init_ok = False
 prevminute = -1
+tickwrap = 120000
 
 def timeoutReached(timerval):
-   if (utime.ticks_diff(utime.ticks_ms(),timerval)>0):
+   global tickwrap
+   at = utime.ticks_ms()
+   if (utime.ticks_diff(at,timerval)>0):
+     return True
+   elif utime.ticks_diff(timerval,at)>(tickwrap):
      return True
    return False
 
@@ -58,8 +63,8 @@ def run10timespersecond():
        pass
   try:
    ExecQueueCmds()
-  except:
-   pass
+  except Exception as e:
+   print(e)#debug
 
 def runoncepersecond():
    for x in range(0,len(settings.Tasks)):
@@ -144,8 +149,8 @@ def setclock():
      ntpres = unet.setntp(settings.AdvSettings['ntpserver'],settings.AdvSettings['timezone'])
      if ntpres:
       misc.start_time = utime.time()
-  except:
-   pass
+  except Exception as e:
+   print(e)
   try:
    if settings.AdvSettings['extrtc']>0 and settings.AdvSettings['rtci2c']>=0:
      import inc.mrtc as mrtc
@@ -237,7 +242,7 @@ def networkInit():
        unet.lan_init()
        c = 8
        while (unet.lan_isconnected()==False) and (c>0):
-        utime.sleep_ms(500)
+        utime.sleep_ms(800)
         print('-')
         c-=1
       except Exception as e:
@@ -257,8 +262,13 @@ def networkInit():
     if unet.wifi_sta_isconnected() or unet.lan_isconnected():
      setclock() # set clock after network init to be nice with ntp
      print("http://"+ unet.get_ip() )
+     return True
     else:
+     if ((get_active_mode() & 2) == 2): #ap mode detected
+      print("AP mode")
+      return True
      print("No working network interface found")
+     return False
 
 def PluginInit():
  global fake
@@ -404,7 +414,7 @@ def RulesInit():
 
 
 async def main():
- global timer100ms, timer20ms, timer1s, timer2s, timer30s, init_ok, prevminute, fake
+ global timer100ms, timer20ms, timer1s, timer2s, timer30s, init_ok, prevminute, fake, tickwrap
  ret = None
  amin = ""
  days = ['Mon','Tue',"Wed","Thu","Fri","Sat","Sun"]
@@ -426,7 +436,14 @@ async def main():
      settings.loadsettings()
      settings.loadadvsettings()
      hardwareInit(doinit)
-     networkInit()
+     nonet = True
+     try:
+      while nonet:
+       nonet = (networkInit()==False)
+       if nonet:
+        utime.sleep_ms(800)
+     except:
+      pass
      PluginInit()
      CPluginInit()
      NotifierInit()
@@ -440,6 +457,7 @@ async def main():
  timer1s    = timer100ms
  timer2s    = timer100ms
  timer30s   = timer100ms
+ tickwrap = int(int(utime.ticks_add(0, -1)) /2)
  print("Starting main loop")
  while init_ok:
     try:
@@ -482,10 +500,10 @@ async def main():
  print("Main loop ended")
 
 loop = asyncio.get_event_loop()
-loop.create_task(main())   #start main background loop
 if fake:
  p = 8080
 else:
  p = 80
 loop.create_task(MicroWebSrv.serve(host='0.0.0.0', port=p)) #start web server loop
+loop.create_task(main())   #start main background loop
 loop.run_forever() #continue forever

@@ -11,16 +11,14 @@ async def handle_command(request,response,chunk):
    responsearr = parse_qs(request.query)
  else:
   responsearr = []
-
  ws.sendHeadandTail("TmplStd",ws._HEAD)
  try:
   cmdline = ws.arg("cmd",responsearr).strip()
   if cmdline.startswith('reboot'):
      ws.sendHeadandTail("TmplStd",ws._TAIL)
-
   if len(cmdline)>0:
    responsestr = str(doExecuteCommand(cmdline))
- except:
+ except Exception as e:
   pass
 
  if len(responsestr)>0:

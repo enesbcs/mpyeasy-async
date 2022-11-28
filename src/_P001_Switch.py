@@ -1,8 +1,8 @@
 ########################################################################
-##################### GPIO input plugin for mpyEasy ####################
+################## GPIO input plugin for mpyEasy-async #################
 ########################################################################
 #
-# Copyright (C) 2020 by Alexander Nagy - https://bitekmindenhol.blog.hu/
+# Copyright (C) 2022 by Alexander Nagy - https://bitekmindenhol.blog.hu/
 #
 import plugin
 import pglobals
@@ -33,35 +33,35 @@ class Plugin(plugin.PluginProto):
   self._pin = None
 
  def plugin_exit(self):
-  try:
-   self._pin.irq(handler=None)
-  except:
-   pass
+  return True
 
  def plugin_init(self,enableplugin=None):
   plugin.PluginProto.plugin_init(self,enableplugin)
   self.decimals[0]=0
-  if int(self.taskdevicepin[0])>=0 and self.enabled:
-   import inc.libhw as libhw
-   self._pin = libhw.setgpio(int(self.taskdevicepin[0]))
-   self.set_value(1,self._pin.value(),True) # Sync plugin value with real pin state
-   try:
-    self.plugin_exit()
-    if self.taskdevicepluginconfig[0]:
-     misc.addLog(pglobals.LOG_LEVEL_INFO,"Registering 10/sec timer as asked")
+  self.taskdevicepluginconfig[0] = True #force hack
+  try:
+   if int(self.taskdevicepin[0])>=0 and self.enabled:
+    import inc.libhw as libhw
+    self._pin = libhw.setgpio(int(self.taskdevicepin[0]))
+    self.set_value(1,self._pin.value(),True) # Sync plugin value with real pin state
+    try:
+     if self.taskdevicepluginconfig[0]:
+      misc.addLog(pglobals.LOG_LEVEL_INFO,"Registering 10/sec timer as asked")
+      self.timer100ms = True
+      return True
+     self._pin.irq(trigger=3,handler=self.p001_handler) # https://github.com/peterhinch/micropython-async/blob/master/v3/docs/INTERRUPTS.md
+     misc.addLog(pglobals.LOG_LEVEL_DEBUG,"Event registered to pin "+str(self.taskdevicepin[0]))
+     self.timer100ms = False
+    except:
+     misc.addLog(pglobals.LOG_LEVEL_ERROR,"Event can not be added, register backup timer")
      self.timer100ms = True
-     return True
-    self._pin.irq(trigger=3,handler=self.p001_handler)
-    misc.addLog(pglobals.LOG_LEVEL_DEBUG,"Event registered to pin "+str(self.taskdevicepin[0]))
-    self.timer100ms = False
-   except:
-    misc.addLog(pglobals.LOG_LEVEL_ERROR,"Event can not be added, register backup timer")
-    self.timer100ms = True
+  except:
+   pass
 
  def webform_load(self):
 #  ws.addFormNote("Please make sure to select <a href='hardware'>pin configured</a> for input for default (or output to report back its state)!")
   ws.addFormCheckBox("Force 10/sec periodic checking of pin","p001_per",self.taskdevicepluginconfig[0])
-#  ws.addFormNote("For output pin, only 10/sec periodic method will work!")
+  ws.addFormNote("Only 10/sec periodic method will work because asyncio!")
 #  ws.addFormNumericBox("De-bounce (ms)","p001_debounce",self.taskdevicepluginconfig[1],0,1000)
   options = ["Normal Switch","Push Button Active Low","Push Button Active High"]
   optionvalues = [0,1,2]
@@ -70,10 +70,7 @@ class Plugin(plugin.PluginProto):
   return True
 
  def webform_save(self,params):
-  if (ws.arg("p001_per",params)=="on"):
-   self.taskdevicepluginconfig[0] = True
-  else:
-   self.taskdevicepluginconfig[0] = False
+  self.taskdevicepluginconfig[0] = True
 #  par = ws.arg("p001_debounce",params)
 #  try:
 #   self.taskdevicepluginconfig[1] = int(par)

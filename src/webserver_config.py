@@ -14,7 +14,10 @@ async def handle_config(request,response, chunk):
  try:
   if (saved):
    settings.Settings["Name"] = ws.arg("name",responsearr).replace(" ","")
-   settings.Settings["Unit"] = ws.arg("unit",responsearr)
+   try:
+    settings.Settings["Unit"] = int(float(ws.arg("unit",responsearr)))
+   except:
+    settings.Settings["Unit"] = 0
    tpw = ws.arg("password",responsearr)
    if "**" not in tpw:
     settings.Settings["Password"]  = tpw
@@ -34,22 +37,25 @@ async def handle_config(request,response, chunk):
    if "**" not in tpw:
      settings.Settings["AP2KEY"] = tpw
    settings.Settings['WifiClient'] = (ws.arg("wifista",responsearr)=="on")
-   settings.Settings['WifiAP'] = int(ws.arg("apmode",responsearr))
+   try:
+    settings.Settings['WifiAP'] = int(float(ws.arg("apmode",responsearr)))
+   except:
+    settings.Settings['WifiAP'] = 0
    settings.Settings['APCAPTIVE'] = (ws.arg("ap_captive",responsearr)=="on")  
    settings.Settings['WDHCP'] = (ws.arg("w_dhcp",responsearr)=="on")
-   if settings.Settings['WDHCP']==False:
-    settings.Settings['WIP'] = ws.arg("w_ip",responsearr)
-    settings.Settings['WMask'] = ws.arg("w_mask",responsearr)
-    settings.Settings['WGW'] = ws.arg("w_gw",responsearr)
-    settings.Settings['WDNS'] = ws.arg("w_dns",responsearr)
+#   if settings.Settings['WDHCP']==False:
+   settings.Settings['WIP'] = ws.arg("w_ip",responsearr)
+   settings.Settings['WMask'] = ws.arg("w_mask",responsearr)
+   settings.Settings['WGW'] = ws.arg("w_gw",responsearr)
+   settings.Settings['WDNS'] = ws.arg("w_dns",responsearr)
    settings.Settings['LANIF'] = (ws.arg("lanif",responsearr)=="on")
    if settings.Settings['LANIF']:
     settings.Settings['LDHCP'] = (ws.arg("l_dhcp",responsearr)=="on")
-    if settings.Settings['LDHCP']==False:
-     settings.Settings['LIP'] = ws.arg("l_ip",responsearr)
-     settings.Settings['LMask'] = ws.arg("l_mask",responsearr)
-     settings.Settings['LGW'] = ws.arg("l_gw",responsearr)
-     settings.Settings['LDNS'] = ws.arg("l_dns",responsearr)
+    #if settings.Settings['LDHCP']==False:
+    settings.Settings['LIP'] = ws.arg("l_ip",responsearr)
+    settings.Settings['LMask'] = ws.arg("l_mask",responsearr)
+    settings.Settings['LGW'] = ws.arg("l_gw",responsearr)
+    settings.Settings['LDNS'] = ws.arg("l_dns",responsearr)
    settings.savesettings()
   else:
    settings.loadsettings()

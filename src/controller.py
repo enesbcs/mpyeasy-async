@@ -1,4 +1,7 @@
-import ujson
+try:
+ import ujson
+except:
+ import json as ujson
 
 class ControllerProto:
  CONTROLLER_ID = -1
