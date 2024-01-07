@@ -1,9 +1,6 @@
 [![Release downloads](https://img.shields.io/github/downloads/enesbcs/mpyeasy-async/total.svg)]() [![Code size](https://img.shields.io/github/languages/code-size/enesbcs/mpyeasy-async)]() [![Last commit](https://img.shields.io/github/last-commit/enesbcs/mpyeasy-async)]()
 
 # To support the development you can:
-- Be a patron at [Patreon](https://www.patreon.com/enesbcs)
-- Buy a [coffee](https://ko-fi.com/I3I5UT4H)
-- Donate by [PayPal](https://www.paypal.me/rpieasy)
 - Adding Python code by [Pull Request](https://github.com/enesbcs/mpyeasy-async/pulls)
 
 # mPyEasy-Async
